@@ -3,13 +3,19 @@ import { Construct } from "constructs";
 import { LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
 import * as path from "path";
 import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
+import { IParameter } from "aws-cdk-lib/aws-ssm";
 
 export interface MessageStackProps {
   restApi: RestApi;
+  parameters: IParameter[];
 }
 
 export class MessageStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, { restApi }: MessageStackProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    { restApi, parameters }: MessageStackProps
+  ) {
     super(scope, id);
 
     const getMessageQuery = new Function(this, "getMessageLambda", {
@@ -38,6 +44,11 @@ export class MessageStack extends cdk.Stack {
       environment: {
         MESSAGE: "POST hello POST",
       },
+    });
+
+    parameters.forEach((param) => {
+      param.grantRead(getMessageQuery);
+      param.grantRead(postMessageQuery);
     });
 
     restApi.root
